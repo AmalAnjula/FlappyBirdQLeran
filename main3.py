@@ -8,7 +8,7 @@ import pygame
 from pygame.locals import *
 from contain import *
 
-import os
+ 
 import argparse
 import pickle
 import time
