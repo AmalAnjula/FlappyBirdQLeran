@@ -7,12 +7,12 @@ import threading
 import pygame
 from pygame.locals import *
 from contain import *
-
+import tracemalloc
  
 import argparse
 import pickle
 import time
-
+import os
 import cv2
 
 import tkinter as tk
@@ -22,7 +22,10 @@ sys.path.append(os.getcwd())
 
 start_time=time.time()
 
+MaxScoreToTrain = 10
 
+
+tracemalloc.start()
 def your_function(arg):
     
     def nothing(x):
@@ -229,6 +232,8 @@ def mainGame(movementInfo):
     playerFlapped = False  # True when player flaps
 
     while True:
+        #playerx=140
+        #playery=180
         if -playerx + lowerPipes[0]["x"] > -30:
             myPipe = lowerPipes[0]
         else:
@@ -243,7 +248,7 @@ def mainGame(movementInfo):
                     playerVelY = playerFlapAcc
                     playerFlapped = True
                     SOUNDS["wing"].play()
-
+        #print(-playerx , myPipe["x"],-playerx+myPipe["x"], -playery , myPipe["y"], -playery + myPipe["y"])
         if myBot.actions(-playerx + myPipe["x"], -playery + myPipe["y"], playerVelY):
             if playery > -2 * IMAGES["player"][0].get_height():
                 playerVelY = playerFlapAcc
@@ -257,9 +262,21 @@ def mainGame(movementInfo):
         if crashTest[0]:
             # Update the q scores
             myBot.writeQval()
-            time.sleep(2)
+
+            #print(myBot.game_count ,myBot.q_values[myBot.state][act],)
+
+            #time.sleep(2)
             print("crashed")
             start_time = time.time()  # Record the start time
+
+
+            f = open("data/plotData.csv", "a")
+            
+            f.write(str( myBot.game_count)+","+ str(score) +","+str(round(myBot.singleQVal,4))+","+str(round(tracemalloc.get_traced_memory()[0]/1000,2))+","+str(round(tracemalloc.get_traced_memory()[1]/1000,2))+"\n")
+            f.close()
+
+
+
             return {
                 "y": playery,
                 "groundCrash": crashTest[1],
@@ -395,7 +412,7 @@ def getRandomPipe():
 
 
 def showScore(score):
-    global start_time
+    global start_time,newTime,MaxScoreToTrain
     """displays score in center of screen"""
     scoreDigits = [int(x) for x in list(str(score))]
     totalWidth = 0  # total width of all numbers to be printed
@@ -410,16 +427,36 @@ def showScore(score):
         Xoffset += IMAGES["numbers"][digit].get_width()
 
 
-    font = pygame.font.Font(None, 36)  # You can adjust the font size as needed
+    font = pygame.font.Font(None, 25)  # You can adjust the font size as needed
      #
-    game_count = font.render("G Count: {}".format(myBot.game_count), True, (0, 0, 0))
-   
-    time_text = font.render("Time: {}s".format(round((time.time() - start_time),2)), True, (0, 0, 0))
-    text_rect = time_text.get_rect(center=(screenWidth // 2, screenHeight * 0.9))
-    game_count_text_rect = game_count.get_rect(center=(screenWidth // 2, screenHeight * 0.95))
     
+    game_count = font.render("Game try: {}".format(myBot.game_count)+"", True, (0, 0, 0))
+    #tracemalloc.get_traced_memory()
+
+
+    if score < MaxScoreToTrain:
+        newTime=time.time()
+    
+    time_text = font.render("Time: {}s ".format(round((newTime - start_time),2)), True, (0, 0, 0))
+
+    text_rect = time_text.get_rect(center=(screenWidth // 2, screenHeight * 0.85))
+    game_count_text_rect = game_count.get_rect(center=(screenWidth // 2, screenHeight * 0.9))
+    
+    memNow,MemPeak=tracemalloc.get_traced_memory()
+    memNow=round(memNow/1000,2)
+    MemPeak=round(MemPeak/1000,2)
+
+    #memInfo=str(memNow)+str(MemPeak)
+
+    memInfo=font.render("Now: {}Kb".format(memNow)+" Peak {}Kb".format(MemPeak), True, (0, 0, 0))
+    #memUseRect=memInfo.get_rect(center=(screenWidth // 2, screenHeight * 0.95))
+    memUseRect=memInfo.get_rect(center=(screenWidth // 2, screenHeight * 0.95))
+
     SCREEN.blit(time_text, text_rect)
     SCREEN.blit(game_count, game_count_text_rect)
+    SCREEN.blit(memInfo, memUseRect)
+
+
 
 
 def checkCrash(player, upperPipes, lowerPipes):
@@ -485,7 +522,7 @@ def getHitmask(image):
 
 
 if __name__ == "__main__":
-    thread1 = threading.Thread(target=your_function, args=(10,))
+    #thread1 = threading.Thread(target=your_function, args=(10,))
     # Start threads
-    thread1.start()
+    #thread1.start()
     main()

@@ -1,4 +1,5 @@
 import json
+import tracemalloc
 
 
 class FlappyBirdQLearningBot(object):
@@ -11,14 +12,16 @@ class FlappyBirdQLearningBot(object):
     def __init__(self):
         self.game_count = 0  # Game count of current run, incremented after every death
         self.dumping_interval = 25  # Number of iterations to dump Q values to JSON after
-        self.discount_factor = 1.0
+        #self.discount_factor = 1.
+        self.discount_factor = 0.5
+        self.singleQVal=0
         self.rewards = {0: 1, 1: -1000}  # Reward function
         self.learning_rate = 0.7
         self.load_q_values()
         self.last_state = "420_240_0"   
         self.last_action = 0
         self.moves = []
-
+        tracemalloc.start()
 
         
 
@@ -35,11 +38,12 @@ class FlappyBirdQLearningBot(object):
         file.close()
 
     def actions(self, x_diff, y_diff, velocity):
+
         """
         Chooses the best action with respect to the current state - Chooses 0 (don't flap) to tie-break
         """
         state = self.map_state(x_diff, y_diff, velocity)
-
+        #print(state)
         self.moves.append(
             (self.last_state, self.last_action, state)
         )  # Add the experience to the history
@@ -62,6 +66,8 @@ class FlappyBirdQLearningBot(object):
         # Flag if the bird died in the top pipe
         high_death_flag = True if int(history[0][2].split("_")[1]) > 120 else False
 
+
+        
         # Q-learning score updates
         t = 1
         for exp in history:
@@ -82,8 +88,13 @@ class FlappyBirdQLearningBot(object):
             self.q_values[state][act] = (1 - self.learning_rate) * (self.q_values[state][act]) + \
                                         self.learning_rate * (
                                                 current_reward + self.discount_factor * max(self.q_values[res_state]))
-
+            #print("**************************")
+            #print(state,act,self.q_values[state][act] )
             t += 1
+            #print(self.game_count ,self.q_values[state][act], tracemalloc.get_traced_memory())
+
+            self.singleQVal=self.q_values[state][act]
+
 
         self.game_count += 1  # Increase game count
         if dump_q_values:
@@ -98,6 +109,7 @@ class FlappyBirdQLearningBot(object):
         X -> [-40,-30...120] U [140, 210 ... 420]
         Y -> [-300, -290 ... 160] U [180, 240 ... 420]
         """
+        
         if x_diff < 140:
             x_diff = int(x_diff) - (int(x_diff) % 10)
         else:

@@ -13,7 +13,7 @@ baseY = screenHeight * 0.79
 IMAGES, SOUNDS, HITMASKS = {}, {}, {}
 
 
-
+newTime=0
 
 
 start_time=0
