@@ -13,7 +13,7 @@ class FlappyBirdQLearningBot(object):
         self.game_count = 0  # Game count of current run, incremented after every death
         self.dumping_interval = 25  # Number of iterations to dump Q values to JSON after
         #self.discount_factor = 1.
-        self.discount_factor = 0.5
+        self.discount_factor =1.
         self.singleQVal=0
         self.rewards = {0: 1, 1: -1000}  # Reward function
         self.learning_rate = 0.7
